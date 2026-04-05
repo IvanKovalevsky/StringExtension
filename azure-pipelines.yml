@@ -1,0 +1,41 @@
+trigger:
+- main
+
+pool:
+  name: Default   # replace later if your self-hosted agent pool has a different name
+
+variables:
+  buildConfiguration: 'Release'
+  projectPath: 'StringExtensionsLib/StringExtensionsLib.csproj'
+  packageVersion: '1.0.$(Build.BuildId)'
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET 8 SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '8.0.x'
+
+- script: dotnet restore
+  displayName: 'Restore packages'
+
+- script: dotnet build $(projectPath) --configuration $(buildConfiguration)
+  displayName: 'Build class library'
+
+- task: NuGetAuthenticate@1
+  displayName: 'Authenticate to Azure Artifacts'
+
+- script: >
+    dotnet pack $(projectPath)
+    --configuration $(buildConfiguration)
+    /p:PackageVersion=$(packageVersion)
+    --output $(Build.ArtifactStagingDirectory)
+  displayName: 'Pack NuGet package'
+
+- task: NuGetCommand@2
+  displayName: 'Push package to Azure Artifacts'
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg;!$(Build.ArtifactStagingDirectory)/*.symbols.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: 'stringextensions-feed'
