@@ -1,0 +1,12 @@
+﻿namespace StringExtensionsLib;
+
+public static class StringExtensions
+{
+    public static bool StartsWithUpperCase(this string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        return char.IsUpper(value[0]);
+    }
+}
